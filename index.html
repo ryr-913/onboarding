@@ -33,19 +33,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue'
   width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;border:none;background:none;color:#666}
 .navbar .edito.on{color:var(--primary)}
 
-/* 编辑模式 */
-.editing [data-edit]{outline:1.5px dashed #FFB000;outline-offset:2px;border-radius:3px;cursor:text;transition:background .15s}
-.editing [data-edit]:hover{background:rgba(255,176,0,.13)}
-.editing [data-edit]:focus{outline:2px solid #FF8C00;background:rgba(255,176,0,.18)}
-.edit-bar{display:none;flex-shrink:0;background:#FFF8E6;border-bottom:1px solid #FFE0A3;padding:9px 14px;z-index:99}
-.edit-bar.show{display:block}
-.edit-bar .eb-tip{font-size:12.5px;color:#8a5a00;margin-bottom:8px;text-align:center}
-.edit-bar .eb-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-.edit-bar button{border:none;padding:7px 15px;border-radius:16px;font-size:13px;font-family:inherit;cursor:pointer}
-.edit-bar .eb-save{background:var(--ok);color:#fff}
-.edit-bar .eb-export{background:var(--primary);color:#fff}
-.edit-bar .eb-reset{background:#ECEFF3;color:#555}
-.edit-bar .eb-exit{background:#ECEFF3;color:#555}
 
 .pages{flex:1;overflow:hidden;position:relative}
 .page{position:absolute;inset:0;display:none;flex-direction:column;background:var(--bg)}
@@ -267,18 +254,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue'
     <button class="back" id="navBack" onclick="goBack()">‹</button>
     <div class="title" id="navTitle">感知四方</div>
     <button class="homeico" id="navHome" onclick="switchTab('home')">⌂</button>
-    <button class="edito" id="navEdit" onclick="toggleEdit()">✎</button>
-  </div>
-
-  <!-- 编辑模式工具条 -->
-  <div class="edit-bar" id="editBar">
-    <div class="eb-tip">✎ 编辑模式：点击页面上任意文字即可修改</div>
-    <div class="eb-btns">
-      <button class="eb-save" onclick="saveEdit()">✓ 保存</button>
-      <button class="eb-export" onclick="exportHTML()">⬇ 导出HTML</button>
-      <button class="eb-reset" onclick="resetEdit()">↺ 还原</button>
-      <button class="eb-exit" onclick="toggleEdit()">✕ 退出</button>
-    </div>
   </div>
 
   <div class="pages">
@@ -1010,116 +985,6 @@ window.addEventListener('popstate',function(){if(current!=='home'){goBack();hist
 history.pushState(null,'');
 updateNav();
 
-/* ============ 可视化编辑模式 ============ */
-var editMode=false, editSaved={};
-var EDITABLE='.hero-tx h1,.hero-tx .slogan,.sub-hero h2,.sub-hero p,.card h3,.card p,.card li,.kv .k,.kv .v,.linkrow .lk-l,.fold-h .t,.fold-h .d,.fold-b p,.fold-b li,.tbl th,.tbl td,.bus .bt,.bus .bl,.tip,.li-t,.li-d,.qt,.block-title,.edit-able';
-
-function collectEditable(){
-  var list=[];
-  document.querySelectorAll(EDITABLE).forEach(function(el){
-    // 跳过含子元素结构的容器（避免把整块当成一段文本破坏结构）
-    if(el.children.length>0 && !(el.children.length===1 && el.children[0].tagName==='SPAN')){
-      // 允许 h3/p/li 里有 <strong>/<span> 的情况，这里仍可整体编辑
-    }
-    if(!el.hasAttribute('data-edit')){
-      el.setAttribute('data-edit', list.length);
-    }
-    list.push(el);
-  });
-  return list;
-}
-
-function applySaved(){
-  try{ editSaved=JSON.parse(localStorage.getItem('sf_edit')||'{}'); }catch(e){ editSaved={}; }
-  if(!Object.keys(editSaved).length) return;
-  var list=collectEditable();
-  list.forEach(function(el){
-    var id=el.getAttribute('data-edit');
-    if(editSaved[id]!==undefined && el.innerHTML!==editSaved[id]) el.innerHTML=editSaved[id];
-  });
-}
-
-function toggleEdit(){
-  editMode=!editMode;
-  document.body.classList.toggle('editing', editMode);
-  document.getElementById('editBar').classList.toggle('show', editMode);
-  document.getElementById('navEdit').classList.toggle('on', editMode);
-  var list=collectEditable();
-  list.forEach(function(el){
-    if(editMode){
-      el.setAttribute('contenteditable','true');
-      el.setAttribute('spellcheck','false');
-    }else{
-      el.removeAttribute('contenteditable');
-    }
-  });
-  // 编辑时禁用链接跳转/按钮
-  document.querySelectorAll('.logo-svg').forEach(function(l){});
-  if(editMode){
-    toast('已进入编辑模式，点击文字即可修改');
-    // 暂停页面滚动锁定，方便查看
-  }
-}
-
-function saveEdit(){
-  var list=collectEditable(), data={};
-  list.forEach(function(el){
-    var id=el.getAttribute('data-edit');
-    if(id!==null) data[id]=el.innerHTML;
-  });
-  try{
-    localStorage.setItem('sf_edit', JSON.stringify(data));
-    editSaved=data;
-    toast('✓ 已保存，下次打开仍生效');
-  }catch(e){ toast('保存失败，内容过大'); }
-  list.forEach(function(el){ el.removeAttribute('contenteditable'); });
-  editMode=false;
-  document.body.classList.remove('editing');
-  document.getElementById('editBar').classList.remove('show');
-  document.getElementById('navEdit').classList.remove('on');
-}
-
-function resetEdit(){
-  if(!confirm('确定还原为最初的内容？你的修改将全部丢失。')) return;
-  localStorage.removeItem('sf_edit');
-  location.reload();
-}
-
-/* 导出：把当前内容写进HTML文件下载 */
-function exportHTML(){
-  var list=collectEditable(), ov={};
-  list.forEach(function(el){ var id=el.getAttribute('data-edit'); if(id!==null) ov[id]=el.innerHTML; });
-  var clone=document.documentElement.cloneNode(true);
-  // 移除编辑态属性
-  clone.querySelectorAll('[contenteditable]').forEach(function(e){e.removeAttribute('contenteditable');e.removeAttribute('data-edit');});
-  var eb=clone.querySelector('#editBar'); if(eb) eb.classList.remove('show');
-  var nb=clone.querySelector('#navEdit'); if(nb) nb.classList.remove('on');
-  clone.querySelector('body').classList.remove('editing');
-  // 用当前内容替换（按 data-edit 顺序）
-  var els=clone.querySelectorAll(EDITABLE);
-  els.forEach(function(el,i){ if(ov[i]!==undefined) el.innerHTML=ov[i]; });
-  // 把编辑结果固化为初始内容，并清除本地保存
-  var html='<!DOCTYPE html>\n'+clone.outerHTML;
-  // 注入清空localStorage的指令，保证导出文件打开即为最新内容
-  html=html.replace('</body>','<script>try{localStorage.removeItem("sf_edit")}catch(e){}<\/script></body>');
-  var blob=new Blob([html],{type:'text/html;charset=utf-8'});
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='新人入职指引-四方光电.html';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
-  toast('✓ 已导出HTML文件');
-}
-
-// 初始化：应用已保存的修改
-applySaved();
-
-// 编辑模式下拦截点击/跳转，避免误触
-document.addEventListener('click',function(e){
-  if(!editMode) return;
-  var a=e.target.closest('a');
-  if(a){ e.preventDefault(); }
-},true);
 </script>
 <div id="imgViewer" onclick="closeZoom()"><span class="iv-close">✕</span><img id="ivImg" src="" alt="放大查看"><div class="iv-tip">双指缩放 / 滚动查看，点击空白处关闭</div></div>
 <script>
