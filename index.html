@@ -140,6 +140,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue'
 .fold.open .fold-b{display:block}
 .mapimg-wrap{margin:12px 10px 6px;border-radius:12px;border:.5px solid var(--border);background:#fff;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y}
 .mapimg{display:block;width:760px;max-width:none;height:auto;cursor:zoom-in}
+.page-foot{padding:26px 20px 10px;text-align:center;color:#9AA0A8;font-size:11.5px;line-height:1.9}
+.page-foot p{margin:0}
+.page-foot .pf-warn{color:#C4A15A;font-size:11px}
+.page-foot .pf-warn::before{content:"⚠ "}
 #imgViewer{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:none;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pinch-zoom pan-x pan-y}
 #imgViewer.on{display:block}
 #imgViewer img{display:block;width:1400px;max-width:none;height:auto;margin:0}
@@ -285,7 +289,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue'
         <div class="block">
           <button class="list-item" onclick="openPage('page-contact')"><div class="li-ic" style="background:#E8F1FC">📞</div><div class="li-body"><div class="li-t">联系人汇总</div></div><div class="arrow">›</div></button>
         </div>
-        <div style="height:10px"></div>
+        <div class="page-foot">
+          <p>四方光电股份有限公司 · 人力资源中心</p>
+          <p>© 2026 Cubic Sensor and Instrument Co., Ltd. 保留所有权利</p>
+          <p class="pf-warn">本页面为公司内部资料，仅供内部员工使用，请勿外传</p>
+        </div>
       </div>
     </section>
 
